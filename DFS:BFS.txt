@@ -1,0 +1,293 @@
+//HW1 by Nishanth Vaidya
+//SUID : 427011192
+
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <stack>
+#include <queue>
+#include <string>
+using namespace std;
+
+class cell {
+public:
+    int id;
+    int wall;
+    bool visited;
+    int previous;
+
+    cell(int i = 0, int w = 0, bool v = false, int p = -1) : id(i), wall(w), visited(v), previous(p) {}
+};
+
+bool move(int cellWall, int direction) {
+    if (direction == 1) return !(cellWall & 2); // south
+    if (direction == 2) return !(cellWall & 4); // east
+    if (direction == 0) return !(cellWall & 8); // north
+    if (direction == 3) return !(cellWall & 1); // west
+    return false;
+}
+
+void DFS_iterative(vector<cell>& maze, int Row, int start, int target, bool& noAnswer) {
+    stack<int> d;
+    maze[start].previous = start;
+    d.push(start);
+    int col = maze.size() / Row;
+
+    if (Row < 1 || col < 1) {
+        cout << "Please enter a positive number of Rows and Columns, both being greater than 1";
+        return;
+    }
+
+    while (!d.empty()) {
+        int current = d.top();
+        d.pop();
+
+        if (current == target) {
+            noAnswer = false;
+            break;
+        }
+
+        if (maze[current].visited) {
+            continue;
+        }
+        maze[current].visited = true;
+
+        int north = current - col;
+        int south = current + col;
+        int west = current - 1;
+        int east = current + 1;
+
+        if (south < maze.size() && move(maze[current].wall, 1) && move(maze[south].wall, 0) && !maze[south].visited) {
+            maze[south].previous = current;
+            d.push(south);
+        }
+
+        if (west >= 0 && (current % col != 0) && move(maze[current].wall, 3) && move(maze[west].wall, 2) && !maze[west].visited) {
+            maze[west].previous = current;
+            d.push(west);
+        }
+
+        if (north >= 0 && move(maze[current].wall, 0) && move(maze[north].wall, 1) && !maze[north].visited) {
+            maze[north].previous = current;
+            d.push(north);
+        }
+
+        if (east < maze.size() && (current % col != (col - 1)) && move(maze[current].wall, 2) && move(maze[east].wall, 3) && !maze[east].visited) {
+            maze[east].previous = current;
+            d.push(east);
+        }
+    }
+
+    if (!noAnswer) {
+        vector<int> answer;
+        int current = target;
+        while (current != start) {
+            answer.push_back(current);
+            current = maze[current].previous;
+        }
+        answer.push_back(start);
+        cout << "DFS_iterative Solution: ";
+        for (int i = answer.size() - 1; i >= 0; --i) {
+            cout << answer[i];
+            if (i != 0) cout << "<-";
+        }
+        cout << endl;
+    }
+    else {
+        noAnswer = true;
+    }
+}
+
+void BFS(vector<cell>& maze, int Row, int start, int target, bool& bfsNoSolution) {
+    queue<int> q;
+    int col = maze.size() / Row;
+
+    if (Row < 1 || col < 1) {
+        cout << "Please enter a positive number of Rows and Columns, both being greater than 1";
+        return;
+    }
+
+    maze[start].previous = start;
+    q.push(start);
+
+    while (!q.empty()) {
+        int current = q.front();
+        q.pop();
+        if (maze[current].visited) {
+            continue;
+        }
+
+        maze[current].visited = true;
+
+        int north = current - col;
+        int south = current + col;
+        int west = current - 1;
+        int east = current + 1;
+
+        if (south < maze.size() && move(maze[current].wall, 1) && move(maze[south].wall, 0) && !maze[south].visited) {
+            maze[south].previous = current;
+            q.push(south);
+        }
+
+        if (west >= 0 && (current % col != 0) && move(maze[current].wall, 3) && move(maze[west].wall, 2) && !maze[west].visited) {
+            maze[west].previous = current;
+            q.push(west);
+        }
+
+        if (north >= 0 && move(maze[current].wall, 0) && move(maze[north].wall, 1) && !maze[north].visited) {
+            maze[north].previous = current;
+            q.push(north);
+        }
+
+        if (east < maze.size() && (current % col != (col - 1)) && move(maze[current].wall, 2) && move(maze[east].wall, 3) && !maze[east].visited) {
+            maze[east].previous = current;
+            q.push(east);
+        }
+
+        if (current == target) {
+            vector<int> answerPath;
+
+            while (current != start) {
+                answerPath.push_back(current);
+                current = maze[current].previous;
+            }
+            answerPath.push_back(start);
+            cout << "BFS Solution: ";
+            for (int i = answerPath.size() - 1; i >= 0; --i) {
+                cout << answerPath[i];
+                if (i != 0) {
+                    cout << "<-";
+                }
+            }
+            cout << endl;
+
+            bfsNoSolution = false;
+            return;
+        }
+    }
+}
+//Beginning of DFS Recusrsive
+
+void DFS_recursive(vector<cell>& maze, int Row, int start, int target, bool& dfsrSolution) {
+
+    static string allMoves = "";
+    int col = maze.size() / Row;
+
+
+    if (Row < 1 || col < 1) {
+        cout << "Please enter a positive number of Rows and Columns, both being greater than 1";
+        return;
+    }
+    if (allMoves.empty()) {
+        maze[start].previous = start;
+    }
+
+    allMoves += "->" + to_string(start);
+
+    if (start == target) {
+        dfsrSolution = true;
+        cout << "All moves for DFS_recursive: " << endl;
+        cout << allMoves << endl;
+
+        vector<int> answerPath;
+        int current = target;
+
+        while (current != maze[current].previous) {
+            answerPath.push_back(current);
+            current = maze[current].previous;
+        }
+        answerPath.push_back(current);
+        cout << "\nDFS_recursive Solution: ";
+        for (int i = 0; i < answerPath.size(); i++) {
+            cout << answerPath[i];
+            if (i != answerPath.size() - 1) {
+                cout << "<-";
+            }
+        }
+        cout << endl;
+
+        allMoves = "";
+
+        return;
+    }
+
+    maze[start].visited = true;
+
+    int north = start - col;
+    int south = start + col;
+    int west = start - 1;
+    int east = start + 1;
+
+    if (south < maze.size() and move(maze[start].wall, 1) and move(maze[south].wall, 0) and !maze[south].visited) {
+        maze[south].previous = start;
+        DFS_recursive(maze, Row, south, target, dfsrSolution);
+        if (dfsrSolution) return;
+        allMoves += "->" + to_string(start);
+    }
+
+    if (west >= 0 and (start % col != 0) and move(maze[start].wall, 3) and move(maze[west].wall, 2) and !maze[west].visited) {
+        maze[west].previous = start;
+        DFS_recursive(maze, Row, west, target, dfsrSolution);
+        if (dfsrSolution) return;
+        allMoves += "->" + to_string(start);
+    }
+
+    if (north >= 0 and move(maze[start].wall, 0) and move(maze[north].wall, 1) and !maze[north].visited) {
+        maze[north].previous = start;
+        DFS_recursive(maze, Row, north, target, dfsrSolution);
+        if (dfsrSolution) return;
+        allMoves += "->" + to_string(start);
+    }
+
+    if (east < maze.size() and (start % col != (col - 1)) and move(maze[start].wall, 2) and move(maze[east].wall, 3) and !maze[east].visited) {
+        maze[east].previous = start;
+        DFS_recursive(maze, Row, east, target, dfsrSolution);
+        if (dfsrSolution) return;
+        allMoves += "->" + to_string(start);
+    }
+}
+
+
+int main() {
+    ifstream In("maze.txt");
+    int Row, Col;
+    int choice;
+    In >> Row >> Col;
+    vector<cell> Maze(Row * Col, -1);
+    int start, target;
+    In >> start >> target;
+    for (int i = 0; i < Row * Col; ++i) {
+        int wall;
+        In >> wall;
+        Maze[i] = cell(i, wall);
+    }
+    In.close();
+    cout << "Type 1 for DFS Iterative, 2 for BFS Iterative, or 3 for DFS Recursive" << endl;
+    cin >> choice;
+
+    if (Row < 1 || Col < 1) {
+        cout << "Please enter a positive number of Rows and Columns, both being greater than 1";
+    }
+    else if (choice == 1) {
+        bool NoSolution = true;
+        DFS_iterative(Maze, Row, start, target, NoSolution);
+        if (NoSolution) {
+            cout << "No answerPath to target found." << endl;
+        }
+    }
+    else if (choice == 2) {
+        bool bfsNoSolution = true;
+        BFS(Maze, Row, start, target, bfsNoSolution);
+        if (bfsNoSolution) {
+            cout << "No answerPath to target found." << endl;
+        }
+    }
+    else if (choice == 3) {
+        bool dfsrSolution = false;
+        DFS_recursive(Maze, Row, start, target, dfsrSolution);
+        if (!dfsrSolution) {
+            cout << "No answerPath to target found." << endl;
+        }
+    }
+    return 0;
+}
